@@ -1,4 +1,4 @@
--- 🔥 HẢI 8A HUB V36 GOLD 🔥
+-- 🔥 HẢI 8A HUB V36 FIX 🔥
 
 getgenv().ScriptTitle = "Hải 8A Hub"
 getgenv().ScriptSubTitle = "V36"
@@ -153,7 +153,7 @@ UIS.InputChanged:Connect(function(input)
 end)
 
 --------------------------------------------------
--- FLY SYSTEM
+-- FLY SYSTEM (FIX BAY LÊN TRỜI)
 --------------------------------------------------
 
 local function stopFly()
@@ -220,13 +220,27 @@ local function startFly()
 	end)
 	
 	flyConnection = RunService.RenderStepped:Connect(function()
+
 		local moveDir = hum.MoveDirection
-		if moveDir.Magnitude > 0 then
-			bv.Velocity = moveDir * speed
-		else
-			bv.Velocity = Vector3.zero
+		local y = 0
+
+		-- PC
+		if UIS:IsKeyDown(Enum.KeyCode.Space) then
+			y = speed
+		elseif UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+			y = -speed
 		end
+
+		-- Mobile giữ nút nhảy
+		if hum.Jump then
+			y = speed
+		end
+
+		local direction = (moveDir * speed) + Vector3.new(0,y,0)
+
+		bv.Velocity = direction
 		bg.CFrame = camera.CFrame
+
 	end)
 	
 	flyBtn.Text = "TẮT BAY"
