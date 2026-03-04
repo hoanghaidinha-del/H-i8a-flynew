@@ -9,7 +9,7 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 
-local correctKey = "ngonluon"
+local correctKey = "haideptrai"
 local unlocked = player:GetAttribute("H8A_Key") or false
 
 local flying = false
