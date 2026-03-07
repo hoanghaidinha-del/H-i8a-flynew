@@ -273,4 +273,3 @@ end
 player.CharacterAdded:Connect(function()
 	stopFly()
 end)
-Thêm key phongdz hạn key 1 tuần
