@@ -1,4 +1,4 @@
--- 🔥 HẢI 8A HUB V36 FIX 🔥
+-- 🔥 HẢI 8A HUB V36 FIX (100% FULL FUNCTIONS) 🔥
 
 getgenv().ScriptTitle = "Hải 8A Hub"
 getgenv().ScriptSubTitle = "V36"
@@ -9,27 +9,27 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 
-local correctKey = "haideptrai"
+local correctKey = "haidz" -- Key theo yêu cầu của bạn
 local unlocked = player:GetAttribute("H8A_Key") or false
 
 local flying = false
 local speed = 80
 local minSpeed = 20
 local maxSpeed = 200
+local flyUp = false
+local flyDown = false
 
 local flyConnection, rainbowConnection, noclipConnection
 
 --------------------------------------------------
 -- GUI
 --------------------------------------------------
-
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.ResetOnSpawn = false
 
 --------------------------------------------------
 -- NÚT hảikk (DI CHUYỂN ĐƯỢC)
 --------------------------------------------------
-
 local openBtn = Instance.new("TextButton", gui)
 openBtn.Size = UDim2.new(0,70,0,70)
 openBtn.Position = UDim2.new(0,20,0.5,-35)
@@ -44,7 +44,6 @@ Instance.new("UICorner", openBtn).CornerRadius = UDim.new(1,0)
 --------------------------------------------------
 -- MENU GIỮ GIỮA
 --------------------------------------------------
-
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0,320,0,340)
 main.AnchorPoint = Vector2.new(0.5,0.5)
@@ -54,13 +53,45 @@ main.Visible = false
 Instance.new("UICorner", main)
 
 openBtn.MouseButton1Click:Connect(function()
-	main.Visible = not main.Visible
+    main.Visible = not main.Visible
 end)
+
+--------------------------------------------------
+-- NÚT ĐIỀU KHIỂN XUỐNG/LÊN (CHO MOBILE)
+--------------------------------------------------
+local mobileFrame = Instance.new("Frame", gui)
+mobileFrame.Size = UDim2.new(0, 80, 0, 170)
+mobileFrame.Position = UDim2.new(1, -100, 0.5, -85)
+mobileFrame.BackgroundTransparency = 1
+mobileFrame.Visible = false -- Chỉ hiện khi đang bay
+
+local upBtn = Instance.new("TextButton", mobileFrame)
+upBtn.Size = UDim2.new(1, 0, 0, 70)
+upBtn.Position = UDim2.new(0, 0, 0, 0)
+upBtn.Text = "▲"
+upBtn.TextScaled = true
+upBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+upBtn.BackgroundTransparency = 0.4
+Instance.new("UICorner", upBtn)
+
+local downBtn = Instance.new("TextButton", mobileFrame)
+downBtn.Size = UDim2.new(1, 0, 0, 70)
+downBtn.Position = UDim2.new(0, 0, 1, -70)
+downBtn.Text = "▼"
+downBtn.TextScaled = true
+downBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+downBtn.BackgroundTransparency = 0.4
+Instance.new("UICorner", downBtn)
+
+-- Xử lý nhấn giữ cho Mobile
+upBtn.MouseButton1Down:Connect(function() flyUp = true end)
+upBtn.MouseButton1Up:Connect(function() flyUp = false end)
+downBtn.MouseButton1Down:Connect(function() flyDown = true end)
+downBtn.MouseButton1Up:Connect(function() flyDown = false end)
 
 --------------------------------------------------
 -- KEY SYSTEM
 --------------------------------------------------
-
 local keyFrame = Instance.new("Frame", gui)
 keyFrame.Size = UDim2.new(0,300,0,200)
 keyFrame.AnchorPoint = Vector2.new(0.5,0.5)
@@ -91,9 +122,8 @@ keyBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", keyBtn)
 
 --------------------------------------------------
--- FLY BUTTON
+-- FLY BUTTON & SPEED SLIDER
 --------------------------------------------------
-
 local flyBtn = Instance.new("TextButton", main)
 flyBtn.Size = UDim2.new(0.8,0,0,50)
 flyBtn.Position = UDim2.new(0.1,0,0.15,0)
@@ -102,10 +132,6 @@ flyBtn.TextScaled = true
 flyBtn.BackgroundColor3 = Color3.fromRGB(255,200,0)
 flyBtn.TextColor3 = Color3.new(0,0,0)
 Instance.new("UICorner", flyBtn)
-
---------------------------------------------------
--- SPEED SLIDER
---------------------------------------------------
 
 local speedText = Instance.new("TextLabel", main)
 speedText.Size = UDim2.new(1,0,0,30)
@@ -128,148 +154,125 @@ sliderBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
 sliderBtn.Text = ""
 
 local dragging = false
-
-sliderBtn.MouseButton1Down:Connect(function()
-	dragging = true
-end)
+sliderBtn.MouseButton1Down:Connect(function() dragging = true end)
 
 UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
 end)
 
 UIS.InputChanged:Connect(function(input)
-	if dragging then
-		local percent = math.clamp(
-			(input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X,
-			0,1
-		)
-		sliderBtn.Position = UDim2.new(percent,-10,0,0)
-		speed = math.floor(minSpeed + (maxSpeed-minSpeed) * percent)
-		speedText.Text = "⚡ Speed: "..speed
-	end
+    if dragging then
+        local percent = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+        sliderBtn.Position = UDim2.new(percent, -10, 0, 0)
+        speed = math.floor(minSpeed + (maxSpeed-minSpeed) * percent)
+        speedText.Text = "⚡ Speed: "..speed
+    end
 end)
 
 --------------------------------------------------
--- FLY SYSTEM (FIX BAY LÊN TRỜI)
+-- FLY SYSTEM (GIỮ NGUYÊN RAINBOW + NOCLIP)
 --------------------------------------------------
-
 local function stopFly()
-	flying = false
-	if flyConnection then flyConnection:Disconnect() end
-	if rainbowConnection then rainbowConnection:Disconnect() end
-	if noclipConnection then noclipConnection:Disconnect() end
-	
-	local char = player.Character
-	if not char then return end
-	
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	local hum = char:FindFirstChild("Humanoid")
-	
-	if hrp then
-		for _,v in pairs(hrp:GetChildren()) do
-			if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
-				v:Destroy()
-			end
-		end
-	end
-	
-	if hum then hum.PlatformStand = false end
-	flyBtn.Text = "BẬT BAY"
+    flying = false
+    mobileFrame.Visible = false
+    if flyConnection then flyConnection:Disconnect() end
+    if rainbowConnection then rainbowConnection:Disconnect() end
+    if noclipConnection then noclipConnection:Disconnect() end
+    
+    local char = player.Character
+    if char then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChild("Humanoid")
+        if hrp then
+            for _,v in pairs(hrp:GetChildren()) do
+                if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then v:Destroy() end
+            end
+        end
+        if hum then hum.PlatformStand = false end
+    end
+    flyBtn.Text = "BẬT BAY"
 end
 
 local function startFly()
-	stopFly()
-	
-	local char = player.Character
-	if not char then return end
-	
-	local hrp = char:WaitForChild("HumanoidRootPart")
-	local hum = char:WaitForChild("Humanoid")
-	
-	local bv = Instance.new("BodyVelocity", hrp)
-	bv.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
-	
-	local bg = Instance.new("BodyGyro", hrp)
-	bg.MaxTorque = Vector3.new(math.huge,math.huge,math.huge)
-	bg.P = 10000
-	
-	hum.PlatformStand = true
-	flying = true
-	
-	noclipConnection = RunService.Stepped:Connect(function()
-		for _,v in pairs(char:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.CanCollide = false
-			end
-		end
-	end)
-	
-	local hue = 0
-	rainbowConnection = RunService.RenderStepped:Connect(function()
-		hue += 0.01
-		if hue > 1 then hue = 0 end
-		local color = Color3.fromHSV(hue,1,1)
-		for _,v in pairs(char:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.Color = color
-			end
-		end
-	end)
-	
-	flyConnection = RunService.RenderStepped:Connect(function()
+    stopFly()
+    local char = player.Character
+    if not char then return end
+    
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local hum = char:WaitForChild("Humanoid")
+    
+    local bv = Instance.new("BodyVelocity", hrp)
+    bv.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+    local bg = Instance.new("BodyGyro", hrp)
+    bg.MaxTorque = Vector3.new(math.huge,math.huge,math.huge)
+    bg.P = 10000
+    
+    hum.PlatformStand = true
+    flying = true
+    mobileFrame.Visible = true
+    
+    -- Noclip (Giữ 100%)
+    noclipConnection = RunService.Stepped:Connect(function()
+        for _,v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+    end)
+    
+    -- Rainbow (Giữ 100%)
+    local hue = 0
+    rainbowConnection = RunService.RenderStepped:Connect(function()
+        hue += 0.01
+        if hue > 1 then hue = 0 end
+        local color = Color3.fromHSV(hue,1,1)
+        for _,v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then v.Color = color end
+        end
+    end)
+    
+    -- Movement
+    flyConnection = RunService.RenderStepped:Connect(function()
+        local moveDir = hum.MoveDirection
+        local y = 0
 
-		local moveDir = hum.MoveDirection
-		local y = 0
+        -- PC + Mobile Controls kết hợp
+        if UIS:IsKeyDown(Enum.KeyCode.Space) or flyUp or hum.Jump then
+            y = speed
+        elseif UIS:IsKeyDown(Enum.KeyCode.LeftControl) or flyDown then
+            y = -speed
+        end
 
-		-- PC
-		if UIS:IsKeyDown(Enum.KeyCode.Space) then
-			y = speed
-		elseif UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
-			y = -speed
-		end
-
-		-- Mobile giữ nút nhảy
-		if hum.Jump then
-			y = speed
-		end
-
-		local direction = (moveDir * speed) + Vector3.new(0,y,0)
-
-		bv.Velocity = direction
-		bg.CFrame = camera.CFrame
-
-	end)
-	
-	flyBtn.Text = "TẮT BAY"
+        bv.Velocity = (moveDir * speed) + Vector3.new(0, y, 0)
+        bg.CFrame = camera.CFrame
+    end)
+    
+    flyBtn.Text = "TẮT BAY"
 end
 
 flyBtn.MouseButton1Click:Connect(function()
-	if flying then stopFly() else startFly() end
+    if flying then stopFly() else startFly() end
 end)
 
 --------------------------------------------------
--- KEY CHECK
+-- KEY CHECK & RESET
 --------------------------------------------------
-
 keyBtn.MouseButton1Click:Connect(function()
-	if string.lower(keyBox.Text) == correctKey then
-		player:SetAttribute("H8A_Key", true)
-		keyFrame.Visible = false
-		main.Visible = true
-	else
-		keyBox.Text = ""
-		keyBox.PlaceholderText = "Sai key!"
-	end
+    if string.lower(keyBox.Text) == correctKey then
+        player:SetAttribute("H8A_Key", true)
+        keyFrame.Visible = false
+        main.Visible = true
+    else
+        keyBox.Text = ""
+        keyBox.PlaceholderText = "Sai key!"
+    end
 end)
 
 if unlocked then
-	keyFrame.Visible = false
-	main.Visible = true
+    keyFrame.Visible = false
+    main.Visible = true
 end
 
 player.CharacterAdded:Connect(function()
-	stopFly()
+    stopFly()
 end)
